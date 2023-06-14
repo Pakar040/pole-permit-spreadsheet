@@ -1,6 +1,5 @@
 import pandas as pd
 from abc import ABC, abstractmethod
-import openpyxl
 
 
 class ExcelManager(ABC):
@@ -8,19 +7,13 @@ class ExcelManager(ABC):
     def __init__(self, file_path: str):
         self.file_path = file_path
         self.df = None
-        self.dict = None
-        self.column_headers = None
 
     def __repr__(self):
         return f"{self.df}"
 
+    @abstractmethod
     def read_excel(self):
-        self.df = pd.read_excel(self.file_path)
-        self.dict = self.df.to_dict()
-        self.column_headers = self.df.columns
-
-    def write_excel(self, data, sheet_name='Sheet1'):
-        data.to_excel(self.file_path, sheet_name=sheet_name, index=False)
+        pass
 
     @abstractmethod
     def format_to_standard(self):
@@ -37,18 +30,16 @@ class PSEManager(ExcelManager):
         super().__init__(file_path)
 
     def read_excel(self):
-        self.df = pd.read_excel(self.file_path, skiprows=8)
-        self.dict = self.df.to_dict()
-        self.column_headers = self.df.columns
+        self.df = pd.read_excel(self.file_path, skiprows=8).astype(str)
 
     def format_to_standard(self):
-        """Changes dict into a standard dict that is usable in other classes"""
-        standard_dict = {}
-        for header in self.df:
-            standard_dict[self.rename_header_to_standard(header)] = self.df[header].tolist()
-        self.dict = standard_dict
+        """Changes DataFrame into a standard DataFrame that is usable in other classes"""
+        standard_df = pd.DataFrame()
+        for column in self.df:
+            standard_df[self.rename_header_to_standard(column)] = self.df[column]
+        self.df = standard_df
 
-    def rename_header_to_standard(self, attachment_name: str):
+    def rename_header_to_standard(self, attachment_name: str) -> str:
         """Renames attachments to match standard convention"""
         attachment_map = {
             'Seq #': '_title',
@@ -74,11 +65,22 @@ class PSEManager(ExcelManager):
         except KeyError:
             return attachment_name
 
+    def parse_notes(self):
+        for index, row in self.df.iterrows():
+            note = row['PSE Field Notes']
+            notes = note.split('\n')
+            parsed_note = []
+            for piece in notes:
+                parsed_note.append(piece.split(': '))
+            self.df.at[index, 'PSE Field Notes'] = parsed_note
+
 
 class TemplateB(ExcelManager):
-    def process_data(self):
-        # Implement the specific processing for Template B
+    def read_excel(self):
         pass
 
-    def rename_header_to_standard(self):
+    def format_to_standard(self):
+        pass
+
+    def rename_header_to_standard(self, attachment_name: str):
         pass

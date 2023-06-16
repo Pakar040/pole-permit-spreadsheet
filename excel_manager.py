@@ -9,7 +9,7 @@ class ExcelManager(ABC):
         self.df = None
 
     def __repr__(self):
-        return f"{self.df}"
+        return f"{self.df.to_string(index=False)}"
 
     @abstractmethod
     def read_excel(self):
@@ -43,8 +43,8 @@ class PSEManager(ExcelManager):
         """Renames attachments to match standard convention"""
         attachment_map = {
             'Seq #': '_title',
-            'PSE Pole #': 'pse_tag_number',
-            'Pole Type T/D': 'pse_pole_type',
+            'PSE Pole #': 'tag_number',
+            'Pole Type T/D': 'pole_type',
             'Pole Owner': 'jursidiction',
             'Latitude': '_latitude',
             'Longitude': '_longitude',
@@ -71,7 +71,16 @@ class PSEManager(ExcelManager):
             notes = note.split('\n')
             parsed_note = []
             for piece in notes:
-                parsed_note.append(piece.split(': '))
+                part = piece.split(': ')
+                try:
+                    if part[0] != 'nan':
+                        pair = {
+                            'name': part[0],
+                            'value': part[1],
+                        }
+                        parsed_note.append(pair)
+                except IndexError:
+                    parsed_note = part
             self.df.at[index, 'PSE Field Notes'] = parsed_note
 
 

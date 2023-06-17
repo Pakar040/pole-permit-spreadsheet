@@ -10,9 +10,8 @@ def main():
     print(excel)
     poles = PoleManager()
     poles.extract_poles(excel.df)
-    attachment1 = poles.get_pole('3').get_attachment('catv')
-    attachment2 = poles.get_pole('3').get_attachment('catv')
-    print(attachment1 == attachment2)
+    pole = poles.get_pole('3')
+    print(pole.find_all_violations())
 
 
 if __name__ == "__main__":

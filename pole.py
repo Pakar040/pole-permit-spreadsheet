@@ -47,10 +47,18 @@ class Pole:
                     lst.append(attach_obj)
         return lst
 
-    def find_all_violations(self):
+    def find_all_violations(self) -> str:
         """Finds all the violations"""
-        for attachment in self.attachment_list:
-            pass
+        # Store violations in a string
+        violations = ""
+        # Sort by highest to the lowest attachment heights
+        self.attachment_list.sort(reverse=True)
+        # Compare to only attachments lower on the pole
+        for i, attachment1 in enumerate(self.attachment_list):
+            for attachment2 in self.attachment_list[i + 1:]:
+                if attachment1.check_for_violation(attachment2) is not None:
+                    violations += attachment1.check_for_violation(attachment2) + "\n"
+        return violations
 
     def get_attachment(self, attachment_name: str) -> at.Attachment:
         """Finds the attachment instance using its name"""

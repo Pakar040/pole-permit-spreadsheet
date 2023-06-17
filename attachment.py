@@ -47,10 +47,26 @@ class Attachment(ABC):
     name: str
     height: str
 
+    def __lt__(self, other):
+        if isinstance(other, Attachment):
+            return self.get_height_in_inches() < other.get_height_in_inches()
+
+    def __le__(self, other):
+        if isinstance(other, Attachment):
+            return self.get_height_in_inches() <= other.get_height_in_inches()
+
+    def __gt__(self, other):
+        if isinstance(other, Attachment):
+            return self.get_height_in_inches() > other.get_height_in_inches()
+
+    def __ge__(self, other):
+        if isinstance(other, Attachment):
+            return self.get_height_in_inches() >= other.get_height_in_inches()
+
     def get_height_in_inches(self) -> int:
         """Takes '3400.0', '2802', or '33' 11"' and converts in to inches of type int"""
         # Check if height is in the format of feet and inches
-        if "'" in self.height:
+        if "'" in str(self.height):
             feet, inches = self.height.split("'", 1)
             # Remove any additional single quotes from the inches
             inches = inches.replace('"', '').replace("'", '')
@@ -73,7 +89,7 @@ class Power(Attachment):
     def check_for_violation(self, other: 'Attachment') -> str:
         self_inches = self.get_height_in_inches()
         other_inches = other.get_height_in_inches()
-        if abs(self_inches - other_inches) < 40 and type(other) == Comm:
+        if abs(self_inches - other_inches) < 40 and isinstance(other, Comm):
             return f"VIOLATION-{other.name} is within 40 inches of {self.name}"
 
 
@@ -82,7 +98,7 @@ class Comm(Attachment):
     def check_for_violation(self, other: 'Attachment') -> str:
         self_inches = self.get_height_in_inches()
         other_inches = other.get_height_in_inches()
-        if abs(self_inches - other_inches) < 12 and type(other) == Comm:
+        if abs(self_inches - other_inches) < 12 and isinstance(other, Comm):
             return f"VIOLATION-{other.name} is within 12 inches of {self.name}"
 
 
@@ -91,5 +107,5 @@ class Streetlight(Attachment):
     def check_for_violation(self, other: 'Attachment') -> str:
         self_inches = self.get_height_in_inches()
         other_inches = other.get_height_in_inches()
-        if abs(self_inches - other_inches) < 40 and type(other) == Comm:
+        if abs(self_inches - other_inches) < 40 and isinstance(other, Comm):
             return f"VIOLATION-{other.name} is within 40 inches of {self.name}"

@@ -12,15 +12,15 @@ class ExcelManager(ABC):
         return f"{self.df.to_string(index=False)}"
 
     @abstractmethod
-    def read_excel(self):
+    def read_excel(self) -> None:
         pass
 
     @abstractmethod
-    def format_to_standard(self):
+    def format_to_standard(self) -> None:
         pass
 
     @abstractmethod
-    def rename_header_to_standard(self, attachment_name: str):
+    def rename_header_to_standard(self, attachment_name: str) -> str:
         pass
 
 
@@ -29,10 +29,11 @@ class PSEManager(ExcelManager):
     def __init__(self, file_path: str):
         super().__init__(file_path)
 
-    def read_excel(self):
+    def read_excel(self) -> None:
+        """Takes data from excel file to create a dataframe"""
         self.df = pd.read_excel(self.file_path, skiprows=8).astype(str)
 
-    def format_to_standard(self):
+    def format_to_standard(self) -> None:
         """Changes DataFrame into a standard DataFrame that is usable in other classes"""
         standard_df = pd.DataFrame()
         for column in self.df:
@@ -65,7 +66,8 @@ class PSEManager(ExcelManager):
         except KeyError:
             return attachment_name
 
-    def parse_notes(self):
+    def parse_notes(self) -> None:
+        """Splits the notes up into attachment dictionaries"""
         for index, row in self.df.iterrows():
             note = row['PSE Field Notes']
             notes = note.split('\n')

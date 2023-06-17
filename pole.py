@@ -21,15 +21,15 @@ class Pole:
         self.owner = self.row['jursidiction']
         self.latitude = self.row['_latitude']
         self.longitude = self.row['_longitude']
-        self.attachment_list = self.get_attachments()
+        self.attachment_list = self.extract_attachments()
 
-    def get_attachments(self) -> List[at.Attachment]:
+    def extract_attachments(self) -> List[at.Attachment]:
         """Combines attachments from columns and notes"""
-        lst1 = self.get_column_attachments()
-        lst2 = self.get_note_attachments()
+        lst1 = self.extract_column_attachments()
+        lst2 = self.extract_note_attachments()
         return lst1 + lst2
 
-    def get_column_attachments(self) -> List[at.Attachment]:
+    def extract_column_attachments(self) -> List[at.Attachment]:
         """Loops through each column and creates attachment list"""
         lst = []
         for column, value in self.row.items():
@@ -37,7 +37,7 @@ class Pole:
                 lst.append(at.create_attachment(column, value))
         return lst
 
-    def get_note_attachments(self) -> List[at.Attachment]:
+    def extract_note_attachments(self) -> List[at.Attachment]:
         """Loops through each attachment in notes and creates attachment list"""
         lst = []
         for attachment in self.row['additional_measurements']:
@@ -46,3 +46,15 @@ class Pole:
                 if attach_obj is not None:
                     lst.append(attach_obj)
         return lst
+
+    def find_all_violations(self):
+        """Finds all the violations"""
+        for attachment in self.attachment_list:
+            pass
+
+    def get_attachment(self, attachment_name: str) -> at.Attachment:
+        """Finds the attachment instance using its name"""
+        for attachment in self.attachment_list:
+            if attachment.name == attachment_name:
+                return attachment
+        return "No attachment with this name was found"

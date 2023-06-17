@@ -9,7 +9,10 @@ def main():
     excel.format_to_standard()
     print(excel)
     poles = PoleManager()
-    poles.get_poles(excel.df)
+    poles.extract_poles(excel.df)
+    attachment1 = poles.get_pole('3').get_attachment('catv')
+    attachment2 = poles.get_pole('3').get_attachment('catv')
+    print(attachment1 == attachment2)
 
 
 if __name__ == "__main__":

@@ -12,7 +12,7 @@ def get_identifiers(identifier_file: str) -> List[List]:
     return [line.strip().lower().split(' ') for line in file_lines]
 
 
-def check_string(list_of_lists: List[List[str]], string: str):
+def check_string(list_of_lists: List[List[str]], string: str) -> bool:
     """Allows for 'primary riser' to match with 'primary_riser'"""
     for lst in list_of_lists:
         if all(item in string for item in lst):
@@ -47,27 +47,65 @@ class Attachment(ABC):
     name: str
     height: str
 
+    def __lt__(self, other):
+        if isinstance(other, Attachment):
+            return self.get_height_in_inches() < other.get_height_in_inches()
+
+    def __le__(self, other):
+        if isinstance(other, Attachment):
+            return self.get_height_in_inches() <= other.get_height_in_inches()
+
+    def __gt__(self, other):
+        if isinstance(other, Attachment):
+            return self.get_height_in_inches() > other.get_height_in_inches()
+
+    def __ge__(self, other):
+        if isinstance(other, Attachment):
+            return self.get_height_in_inches() >= other.get_height_in_inches()
+
+    def get_height_in_inches(self) -> int:
+        """Takes '3400.0', '2802', or '33' 11"' and converts in to inches of type int"""
+        # Check if height is in the format of feet and inches
+        if "'" in str(self.height):
+            feet, inches = self.height.split("'", 1)
+            # Remove any additional single quotes from the inches
+            inches = inches.replace('"', '').replace("'", '')
+            total_inches = int(feet) * 12 + int(inches.strip())
+        else:
+            # Convert the height to an integer
+            self.height = int(float(self.height))
+            feet = self.height // 100
+            inches = self.height % 100
+            total_inches = feet * 12 + inches
+        return total_inches
+
     @abstractmethod
-    def find_violations(self, attachment_array: List['Attachment']):
+    def check_for_violation(self, other: 'Attachment') -> str:
         pass
 
 
 class Power(Attachment):
-    TYPE: str = "Power"
 
-    def find_violations(self, attachment_array: List['Attachment']):
-        pass
+    def check_for_violation(self, other: 'Attachment') -> str:
+        self_inches = self.get_height_in_inches()
+        other_inches = other.get_height_in_inches()
+        if abs(self_inches - other_inches) < 40 and isinstance(other, Comm):
+            return f"VIOLATION-{other.name} is {abs(self_inches - other_inches)}\" from {self.name}"
 
 
 class Comm(Attachment):
-    TYPE: str = 'Comm'
 
-    def find_violations(self, attachment_array: List['Attachment']):
-        pass
+    def check_for_violation(self, other: 'Attachment') -> str:
+        self_inches = self.get_height_in_inches()
+        other_inches = other.get_height_in_inches()
+        if abs(self_inches - other_inches) < 12 and isinstance(other, Comm):
+            return f"VIOLATION-{other.name} is {abs(self_inches - other_inches)}\" from {self.name}"
 
 
 class Streetlight(Attachment):
-    TYPE: str = 'Streetlight'
 
-    def find_violations(self, attachment_array: List['Attachment']):
-        pass
+    def check_for_violation(self, other: 'Attachment') -> str:
+        self_inches = self.get_height_in_inches()
+        other_inches = other.get_height_in_inches()
+        if abs(self_inches - other_inches) < 40 and isinstance(other, Comm):
+            return f"VIOLATION-{other.name} is {abs(self_inches - other_inches)}\" from {self.name}"

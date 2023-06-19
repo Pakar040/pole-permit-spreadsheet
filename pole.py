@@ -14,6 +14,7 @@ class Pole:
     attachment_list: List[at.Attachment] = field(default_factory=list)
 
     def __init__(self, dataframe_row):
+        self.make_ready = None
         self.row = dataframe_row
         self.sequence_number = self.row['_title']
         self.tag_number = self.row['tag_number']
@@ -47,7 +48,7 @@ class Pole:
                     lst.append(attach_obj)
         return lst
 
-    def find_all_violations(self) -> str:
+    def find_violations(self) -> str:
         """Finds all the violations"""
         # Store violations in a string
         violations = ""
@@ -58,7 +59,11 @@ class Pole:
             for attachment2 in self.attachment_list[i + 1:]:
                 if attachment1.check_for_violation(attachment2) is not None:
                     violations += attachment1.check_for_violation(attachment2) + "\n"
-        return violations
+        return violations.rstrip()
+
+    def add_violations(self):
+        """Updates make ready data in dataframe"""
+        self.row['make_ready']
 
     def get_attachment(self, attachment_name: str) -> at.Attachment:
         """Finds the attachment instance using its name"""

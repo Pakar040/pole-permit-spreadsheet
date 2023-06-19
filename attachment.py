@@ -90,7 +90,7 @@ class Power(Attachment):
         self_inches = self.get_height_in_inches()
         other_inches = other.get_height_in_inches()
         if abs(self_inches - other_inches) < 40 and isinstance(other, Comm):
-            return f"VIOLATION-{other.name} is within 40 inches of {self.name}"
+            return f"VIOLATION-{other.name} is {abs(self_inches - other_inches)}\" from {self.name}"
 
 
 class Comm(Attachment):
@@ -99,7 +99,7 @@ class Comm(Attachment):
         self_inches = self.get_height_in_inches()
         other_inches = other.get_height_in_inches()
         if abs(self_inches - other_inches) < 12 and isinstance(other, Comm):
-            return f"VIOLATION-{other.name} is within 12 inches of {self.name}"
+            return f"VIOLATION-{other.name} is {abs(self_inches - other_inches)}\" from {self.name}"
 
 
 class Streetlight(Attachment):
@@ -108,4 +108,4 @@ class Streetlight(Attachment):
         self_inches = self.get_height_in_inches()
         other_inches = other.get_height_in_inches()
         if abs(self_inches - other_inches) < 40 and isinstance(other, Comm):
-            return f"VIOLATION-{other.name} is within 40 inches of {self.name}"
+            return f"VIOLATION-{other.name} is {abs(self_inches - other_inches)}\" from {self.name}"

@@ -17,6 +17,11 @@ class PoleManager:
             pole = Pole(row)
             self.pole_list.append(pole)
 
+    def get_all_violations(self) -> None:
+        """Adds all violations for all poles to dict"""
+        for pole in self.pole_list:
+            pole.make_ready = pole.find_violations()
+
     def get_pole(self, sequence_number: str) -> Pole:
         """Finds a pole instance using its sequence number"""
         for pole in self.pole_list:

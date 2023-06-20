@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from typing import List
 import attachment as at
+import pandas as pd
 
 
 @dataclass
@@ -34,7 +35,7 @@ class Pole:
         """Loops through each column and creates attachment list"""
         lst = []
         for column, value in self.row.items():
-            if at.create_attachment(column, value) is not None and value != 'nan':
+            if at.create_attachment(column, value) is not None and pd.notna(value):
                 lst.append(at.create_attachment(column, value))
         return lst
 

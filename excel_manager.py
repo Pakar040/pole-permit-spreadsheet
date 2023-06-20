@@ -35,6 +35,21 @@ class PSEManager(ExcelManager):
     def read_excel(self) -> None:
         """Takes data from excel file to create a dataframe"""
         self.df = pd.read_excel(self.file_path, skiprows=8).astype(str)
+        print(self.df.columns)
+        self.format_measurements()
+
+    def format_measurements(self):
+        """Formats attachment heights to not include decimal"""
+        self.df['Neutral '] = pd.to_numeric(self.df['Neutral '], errors='coerce').astype('Int64')
+        self.df['Secondary '] = pd.to_numeric(self.df['Secondary '], errors='coerce').astype('Int64')
+        self.df['Drip Loop'] = pd.to_numeric(self.df['Drip Loop'], errors='coerce').astype('Int64')
+        self.df['Primary Riser'] = pd.to_numeric(self.df['Primary Riser'], errors='coerce').astype('Int64')
+        self.df['Secondary Riser'] = pd.to_numeric(self.df['Secondary Riser'], errors='coerce').astype('Int64')
+        self.df['Street Light'] = pd.to_numeric(self.df['Street Light'], errors='coerce').astype('Int64')
+        self.df['CATV'] = pd.to_numeric(self.df['CATV'], errors='coerce').astype('Int64')
+        self.df['TelCo'] = pd.to_numeric(self.df['TelCo'], errors='coerce').astype('Int64')
+        self.df['Fiber'] = pd.to_numeric(self.df['Fiber'], errors='coerce').astype('Int64')
+        self.df['Requested Attachment'] = pd.to_numeric(self.df['Fiber'], errors='coerce').astype('Int64')
 
     def create_output(self) -> None:
         """Combines template dataframe with make manipulated dataframe"""
@@ -120,15 +135,11 @@ class PSEManager(ExcelManager):
 
     def reverse_parse_notes(self) -> None:
         """Combines attachment dictionaries into a single notes field"""
-        if 'additional_measurements' not in self.df.columns:
-            print("Error: 'additional_measurements' column not found in DataFrame.")
-            return
-
         for index, row in self.df.iterrows():
-            parsed_note = row['additional_measurements']
+            parsed_note = row['PSE Field Notes']
             if isinstance(parsed_note, list):
                 if len(parsed_note) == 0:
-                    self.df.at[index, 'additional_measurements'] = 'nan'
+                    self.df.at[index, 'PSE Field Notes'] = 'nan'
                 else:
                     note = ""
                     for item in parsed_note:
@@ -138,7 +149,7 @@ class PSEManager(ExcelManager):
                             note += f"{name}: {value}\n"
                         elif isinstance(item, str):
                             note += item + "\n"
-                    self.df.at[index, 'additional_measurements'] = note.strip()
+                    self.df.at[index, 'PSE Field Notes'] = note.strip()
 
     def update_make_ready(self, lst: List[Pole]) -> None:
         for index, row in self.df.iterrows():

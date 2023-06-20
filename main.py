@@ -7,15 +7,12 @@ def main():
     excel.read_excel()
     excel.parse_notes()
     excel.format()
-    print(excel)
     poles = PoleManager()
     poles.extract_poles(excel.df)
     poles.get_all_violations()
-    print(poles)
     excel.update_make_ready(poles.pole_list)
-    excel.reverse_parse_notes()
     excel.format()
-    print(excel)
+    excel.reverse_parse_notes()
     excel.create_output()
 
 

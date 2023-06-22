@@ -193,4 +193,5 @@ class PSEManager(ExcelManager):
         self.df['CATV'] = pd.to_numeric(self.df['CATV'], errors='coerce').astype('Int64')
         self.df['TelCo'] = pd.to_numeric(self.df['TelCo'], errors='coerce').astype('Int64')
         self.df['Fiber'] = pd.to_numeric(self.df['Fiber'], errors='coerce').astype('Int64')
-        self.df['Requested Attachment'] = pd.to_numeric(self.df['Fiber'], errors='coerce').astype('Int64')
+        self.df['Requested Attachment'] = pd.to_numeric(self.df['Requested Attachment'],
+                                                        errors='coerce').astype('Int64')

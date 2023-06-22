@@ -1,6 +1,6 @@
 from typing import List
 import pandas as pd
-import excel_manager as em
+from excel_manager import ExcelManager
 
 
 class CableComAppManager:
@@ -9,61 +9,49 @@ class CableComAppManager:
     def __init__(self, file_path: str):
         self.file_path = file_path
         self.df = None
-        self.extra_attachment_df = None
-        self.excel_manager: em.ExcelManager() = None
+        self.attachment_df = None
+        self.excel_manager: ExcelManager() = None
 
     def __repr__(self):
         return f"{self.df.to_string(index=False)}"
 
-    def read_excel(self):
-        """Takes data from excel file to create a dataframe"""
+    def set_excel_manager(self, manager: ExcelManager) -> None:
+        self.excel_manager = manager
+
+    def read_excel(self) -> None:
+        """Takes data from excel file to create a DataFrame and attachment only DataFrame"""
         self.df = pd.read_excel(self.file_path, skiprows=0).astype(str)
-        self.extra_attachment_df = self.df.iloc[:, 48:83].apply(pd.to_numeric, errors='coerce').astype('Int64')
+        self.attachment_df = self.df.iloc[:, 48:83].apply(pd.to_numeric, errors='coerce').astype('Int64')
 
-    def select_jurisdiction(self, jurisdiction):
-        """Creates a manager instance of chosen jurisdiction"""
-        if jurisdiction == 'PSE':
-            self.excel_manager = em.PSEManager()
+    def format_to_template(self):
+        """Formats DataFrame to fit in template"""
+        self._add_missing_columns(self.excel_manager.standard_headers)
+        self.df = self.df.loc[:, self.excel_manager.standard_headers]
+        self._add_additional_attachments()
+        formatted_df = pd.DataFrame()
+        for column in self.df:
+            formatted_df[self.excel_manager.rename_header(column)] = self.df[column]
+        self.df = formatted_df
 
-    def format(self):
-        """Formats data frame to fit in template"""
-        standard_headers = [self.excel_manager.rename_header(header) for header in self.excel_manager.template_headers]
-        self.remove_columns_with_header(standard_headers)  # <-- for attachment.df
-        self.add_missing_columns(standard_headers)
-        self.df = self.df.loc[:, standard_headers]
-        self.add_additional_attachments()
-
-    def add_missing_columns(self, column_headers: List[str]):
-        """Adds columns to data frame that are in template"""
+    def _add_missing_columns(self, column_headers: List[str]):
+        """Adds columns to DataFrame that are in template"""
         for col in column_headers:
             if col not in self.df.columns:
                 self.df[col] = None
         return self.df
 
-    def transfer_to_spreadsheet(self):
-        self.format()
-        self.excel_manager.df = self.df
-        self.excel_manager.format()
-        self.excel_manager.format_measurements()
-
-    def create_output(self):
-        self.excel_manager.create_output()
-
-    def remove_columns_with_header(self, header_names: List[str]) -> None:
-        """Reduces data frame to only contain attachments that don't have a column in template"""
-        # Remove columns with the specified header names
-        self.extra_attachment_df = self.extra_attachment_df.drop(columns=header_names, errors='ignore')
-
-    def add_additional_attachments(self):
+    def _add_additional_attachments(self):
         """Takes any attachments that don't have a column and put it in additional notes"""
+        # Remove columns with the specified header names
+        self.attachment_df = self.attachment_df.drop(columns=self.excel_manager.standard_headers, errors='ignore')
         # Loop through rows
-        for i in self.extra_attachment_df.index:
+        for i in self.attachment_df.index:
             # Loop through columns
-            for j in self.extra_attachment_df.columns:
+            for j in self.attachment_df.columns:
                 # Check if value is not NaN
-                if pd.notna(self.extra_attachment_df.at[i, j]):
+                if pd.notna(self.attachment_df.at[i, j]):
                     # Create the string
-                    note = f"{j}: {self.extra_attachment_df.at[i, j]}"
+                    note = f"{j}: {self.attachment_df.at[i, j]}"
                     # Check if 'additional_notes' is NaN
                     if self.df.at[i, 'additional_measurements'] == 'nan':
                         # If it is, set the value as the new string

@@ -18,11 +18,6 @@ class Pole:
         self.make_ready = None
         self.row = dataframe_row
         self.sequence_number = self.row['_title']
-        self.tag_number = self.row['tag_number']
-        self.type = self.row['pole_type']
-        self.owner = self.row['jursidiction']
-        self.latitude = self.row['_latitude']
-        self.longitude = self.row['_longitude']
         self.attachment_list = self.extract_attachments()
 
     def extract_attachments(self) -> List[at.Attachment]:

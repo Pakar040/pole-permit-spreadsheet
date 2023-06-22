@@ -7,12 +7,16 @@ from abc import ABC, abstractmethod
 
 class ExcelManager(ABC):
     """Extracts data from excel and formats it"""
-    def __init__(self, file_path: str):
-        self.file_path = file_path
+    def __init__(self):
+        self.file_path = None
         self.df = None
 
     def __repr__(self):
         return f"{self.df.to_string(index=False)}"
+
+    @abstractmethod
+    def set_file_path(self, file_path: str) -> None:
+        pass
 
     @abstractmethod
     def read_excel(self) -> None:
@@ -29,21 +33,26 @@ class ExcelManager(ABC):
 
 class PSEManager(ExcelManager):
     """Extracts data from excel and formats it to PSE template"""
-    def __init__(self, file_path: str):
-        super().__init__(file_path)
+    def __init__(self):
+        super().__init__()
+        self.template_headers = ['Seq #', 'PSE Pole #', 'Pole Type T/D', 'Pole Owner', 'PSE Umap', 'Location',
+                                    'City/Area', 'Neutral', 'Secondary', 'Drip Loop', 'Secondary Riser',
+                                    'Street Light', 'CATV', 'TelCo', 'Fiber', 'Requested Attachment',
+                                    'Make Ready Notes', 'Mid Span Violation Notes', 'PSE Field Notes']
+
+    def set_file_path(self, file_path: str) -> None:
+        self.file_path = file_path
 
     def read_excel(self) -> None:
         """Takes data from excel file to create a dataframe"""
         self.df = pd.read_excel(self.file_path, skiprows=8).astype(str)
-        print(self.df.columns)
         self.format_measurements()
 
     def format_measurements(self):
         """Formats attachment heights to not include decimal"""
-        self.df['Neutral '] = pd.to_numeric(self.df['Neutral '], errors='coerce').astype('Int64')
-        self.df['Secondary '] = pd.to_numeric(self.df['Secondary '], errors='coerce').astype('Int64')
+        self.df['Neutral'] = pd.to_numeric(self.df['Neutral'], errors='coerce').astype('Int64')
+        self.df['Secondary'] = pd.to_numeric(self.df['Secondary'], errors='coerce').astype('Int64')
         self.df['Drip Loop'] = pd.to_numeric(self.df['Drip Loop'], errors='coerce').astype('Int64')
-        self.df['Primary Riser'] = pd.to_numeric(self.df['Primary Riser'], errors='coerce').astype('Int64')
         self.df['Secondary Riser'] = pd.to_numeric(self.df['Secondary Riser'], errors='coerce').astype('Int64')
         self.df['Street Light'] = pd.to_numeric(self.df['Street Light'], errors='coerce').astype('Int64')
         self.df['CATV'] = pd.to_numeric(self.df['CATV'], errors='coerce').astype('Int64')
@@ -60,11 +69,11 @@ class PSEManager(ExcelManager):
         source_sheet = source_wb.active
 
         # Load the destination workbook
-        destination_wb = openpyxl.load_workbook('user_input/JB0001175447-1_Appendix A Field Survey.xlsx')
+        destination_wb = openpyxl.load_workbook('templates/PSE.xlsx')
         destination_sheet = destination_wb.active
 
         # Copy cells from source to destination
-        for row in source_sheet.iter_rows(min_row=2, min_col=2):
+        for row in source_sheet.iter_rows(min_row=2, min_col=1):
             for cell in row:
                 destination_sheet.cell(row=cell.row + 8, column=cell.column, value=cell.value)
 
@@ -82,21 +91,23 @@ class PSEManager(ExcelManager):
         """Renames attachments to match standard convention or template convention"""
         attachment_map = {
             'Seq #': '_title',
-            'PSE Pole #': 'tag_number',
-            'Pole Type T/D': 'pole_type',
+            'PSE Pole #': 'pse_tag_number',
+            'Pole Type T/D': 'pse_pole_type',
             'Pole Owner': 'jursidiction',
-            'Latitude': '_latitude',
-            'Longitude': '_longitude',
-            'Neutral ': 'neutral_height',
-            'Secondary ': 'secondary_spool',
+            'PSE Umap': 'PSE Umap',
+            'Location': 'Location',
+            'City/Area': 'City/Area',
+            'Neutral': 'neutral_height',
+            'Secondary': 'secondary_spool',
             'Drip Loop': 'drip_loop',
-            'Primary Riser': 'primary_riser',
             'Secondary Riser': 'secondary_riser',
             'Street Light': 'streetlight',
             'CATV': 'catv',
             'TelCo': 'telco',
             'Fiber': 'fiber',
-            'Make Ready Notes': 'make_ready',
+            'Request Attachment': 'Request Attachment',
+            'Make Ready Notes': 'make_ready',  # Not in the spreadsheet but is custom
+            'Mid Span Violation Notes': 'Mid Span Violation Notes',
             'PSE Field Notes': 'additional_measurements'
         }
 
@@ -154,14 +165,3 @@ class PSEManager(ExcelManager):
     def update_make_ready(self, lst: List[Pole]) -> None:
         for index, row in self.df.iterrows():
             self.df.at[index, 'make_ready'] += "\n" + lst[index].make_ready
-
-
-class TemplateB(ExcelManager):
-    def read_excel(self):
-        pass
-
-    def format(self):
-        pass
-
-    def rename_header(self, attachment_name: str):
-        pass

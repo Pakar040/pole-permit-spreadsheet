@@ -5,7 +5,7 @@ import openpyxl
 from abc import ABC, abstractmethod
 
 
-# ----- Static Functions ----- #
+# ----- Static Methods ----- #
 def select_jurisdiction(jurisdiction: str) -> 'ExcelManager':
     """Creates a manager instance of chosen jurisdiction"""
     if jurisdiction == 'PSE':
@@ -179,6 +179,10 @@ class PSEManager(ExcelManager):
         for row in source_sheet.iter_rows(min_row=2, min_col=1):
             for cell in row:
                 destination_sheet.cell(row=cell.row + 8, column=cell.column, value=cell.value)
+
+        # Copy cells T1 and U1 from source to T9 and U9 in destination
+        destination_sheet['T9'] = source_sheet['T1'].value
+        destination_sheet['U9'] = source_sheet['U1'].value
 
         # Save the destination workbook
         destination_wb.save('output/output.xlsx')

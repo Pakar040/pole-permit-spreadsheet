@@ -34,7 +34,7 @@ class Pole:
         lst = []
         for attachment in self.row['additional_measurements']:
             if type(attachment) == dict:
-                attach_obj = at.create_attachment(attachment['name'].lower(), attachment['value'].lower())
+                attach_obj = at.create_attachment(attachment['name'].lower(), attachment['value'].lower(), self.row)
                 if attach_obj is not None:
                     lst.append(attach_obj)
         return lst

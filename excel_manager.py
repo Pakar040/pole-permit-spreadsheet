@@ -141,7 +141,7 @@ class PSEManager(ExcelManager):
     def update_make_ready(self, lst: List[Pole]) -> None:
         """Receives a list of poles and adds the make ready data to DataFrame"""
         for index, row in self.df.iterrows():
-            if pd.isna(self.df.at[index, 'make_ready']):
+            if self.df.at[index, 'make_ready'] == 'nan':
                 self.df.at[index, 'make_ready'] = lst[index].make_ready
             else:
                 self.df.at[index, 'make_ready'] += "\n" + lst[index].make_ready

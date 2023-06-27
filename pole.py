@@ -7,11 +7,6 @@ import pandas as pd
 @dataclass
 class Pole:
     sequence_number: str
-    tag_number: str
-    type: str
-    owner: str
-    latitude: str
-    longitude: str
     attachment_list: List[at.Attachment] = field(default_factory=list)
 
     def __init__(self, dataframe_row):
@@ -30,8 +25,8 @@ class Pole:
         """Loops through each column and creates attachment list"""
         lst = []
         for column, value in self.row.items():
-            if at.create_attachment(column, value) is not None and pd.notna(value):
-                lst.append(at.create_attachment(column, value))
+            if at.create_attachment(column, value, self.row) is not None and pd.notna(value):
+                lst.append(at.create_attachment(column, value, self.row))
         return lst
 
     def extract_note_attachments(self) -> List[at.Attachment]:
@@ -56,10 +51,6 @@ class Pole:
                 if attachment1.check_for_violation(attachment2) is not None:
                     violations += attachment1.check_for_violation(attachment2) + "\n"
         return violations.rstrip()
-
-    def add_violations(self):
-        """Updates make ready data in dataframe"""
-        self.row['make_ready']
 
     def get_attachment(self, attachment_name: str) -> at.Attachment:
         """Finds the attachment instance using its name"""

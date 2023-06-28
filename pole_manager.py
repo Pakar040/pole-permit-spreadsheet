@@ -17,6 +17,10 @@ class PoleManager:
             pole = Pole(row)
             self.pole_list.append(pole)
 
+    def set_to_proposed(self):
+        for index, pole in enumerate(self.pole_list):
+            pole.set_to_proposed_attachments()
+
     def get_all_violations(self) -> None:
         """Adds all violations for all poles to dict"""
         for pole in self.pole_list:

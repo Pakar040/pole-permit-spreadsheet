@@ -50,6 +50,20 @@ def create_attachment(name: str, height: str, df_row: pd.DataFrame) -> 'Attachme
         )
 
 
+def match_string(keyword, text):
+    # Check if the text starts with the keyword or the keyword starts with the text
+    if text.startswith(keyword) or keyword.startswith(text):
+        return True
+    else:
+        return False
+
+
+def feet_and_inches(inches: int) -> str:
+    feet = inches // 12
+    remaining_inches = inches % 12
+    return f'{feet}{remaining_inches:02d}'
+
+
 @dataclass
 class Attachment(ABC):
     name: str
@@ -106,7 +120,7 @@ class Comm(Attachment):
     def check_for_violation(self, other: 'Attachment') -> str:
         self_inches = self.get_height_in_inches()
         other_inches = other.get_height_in_inches()
-        if abs(self_inches - other_inches) < 12 and isinstance(other, Comm):
+        if abs(self_inches - other_inches) < 12 and isinstance(other, Comm) and not match_string(self.name, other.name):
             return f"VIOLATION-{other.name} is {abs(self_inches - other_inches)}\" from {self.name}"
 
 

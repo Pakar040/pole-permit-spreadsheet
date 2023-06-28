@@ -3,6 +3,18 @@ from typing import List
 
 
 class PoleManager:
+    """
+    Stores poles and gets violations for make ready
+
+    Example of how its used:
+    # Get make ready violations from poles
+    poles = PoleManager()
+    poles.extract_poles(fulcrum_excel.make_ready_df)
+    poles.get_all_violations()
+
+    # Add violations to excel and format template
+    fulcrum_excel.update_make_ready(poles.pole_list)
+    """
     pole_list: List[Pole] = []
 
     def __repr__(self) -> str:

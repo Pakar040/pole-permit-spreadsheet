@@ -29,7 +29,7 @@
     excel_manager.set_file_path('user_input/pse_ground_mold.xlsx')
     excel_manager.read_excel()
     excel_manager.format()
-    excel_manager.parse_notes()
+    excel_manager.parse_column('additional_measurements')
 
     # Extract poles and create make ready
     poles = PoleManager()
@@ -38,6 +38,14 @@
 
     # Update make ready in spreadsheet and create output
     excel_manager.update_make_ready(poles.pole_list)
-    excel_manager.reverse_parse_notes()
+    excel_manager.parse_column('additional_measurements')
     excel_manager.format()
     excel_manager.create_output()
+
+Example for using proposed values for make ready
+
+    # Extract poles and create make ready
+    poles = PoleManager()
+    poles.extract_poles(excel_manager.df)
+    poles.set_to_proposed()  # <-- This line is added
+    poles.get_all_violations()

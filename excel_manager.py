@@ -25,10 +25,10 @@ class ExcelManager(ABC):
     def __repr__(self):
         return f"{self.df.to_string(index=False)}"
 
-    def parse_notes(self) -> None:
+    def parse_column(self, column: str) -> None:
         """Splits the notes up into attachment dictionaries"""
         for index, row in self.df.iterrows():
-            note = row['additional_measurements']
+            note = row[column]
             notes = note.split('\n')
             parsed_note = []
             for piece in notes:
@@ -41,16 +41,16 @@ class ExcelManager(ABC):
                         }
                         parsed_note.append(pair)
                 except IndexError:
-                    parsed_note = part
-            self.df.at[index, 'additional_measurements'] = parsed_note
+                    parsed_note.append(piece)
+            self.df.at[index, column] = parsed_note
 
-    def reverse_parse_notes(self) -> None:
+    def reverse_parse_column(self, column: str) -> None:
         """Combines attachment dictionaries into a single notes field"""
         for index, row in self.df.iterrows():
-            parsed_note = row['additional_measurements']
+            parsed_note = row[column]
             if isinstance(parsed_note, list):
                 if len(parsed_note) == 0:
-                    self.df.at[index, 'additional_measurements'] = 'nan'
+                    self.df.at[index, column] = 'nan'
                 else:
                     note = ""
                     for item in parsed_note:
@@ -60,7 +60,7 @@ class ExcelManager(ABC):
                             note += f"{name}: {value}\n"
                         elif isinstance(item, str):
                             note += item + "\n"
-                    self.df.at[index, 'additional_measurements'] = note.strip()
+                    self.df.at[index, column] = note.strip()
 
     def rename_header(self, attachment_name: str) -> str:
         """Renames attachments to match standard convention or template convention"""
@@ -143,6 +143,8 @@ class PSEManager(ExcelManager):
         for index, row in self.df.iterrows():
             if self.df.at[index, 'make_ready'] == 'nan':
                 self.df.at[index, 'make_ready'] = lst[index].make_ready
+            elif lst[index].make_ready == "":
+                pass
             else:
                 self.df.at[index, 'make_ready'] += "\n" + lst[index].make_ready
 

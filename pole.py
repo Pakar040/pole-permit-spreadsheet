@@ -15,13 +15,37 @@ class Pole:
         self.sequence_number = self.row['_title']
         self.attachment_list = self.extract_attachments()
 
+    def set_to_proposed_attachments(self):
+        """Loops through each comment in column and replaces attachment list heights to match proposed pole"""
+        self.attachment_list.sort(reverse=True)
+        for comment in self.row['make_ready']:
+            if type(comment) == dict:
+                name = comment['name'].lower()
+                proposed_height = comment['value']
+                for attachment in self.attachment_list:
+                    if attachment.name in name:
+                        attachment.height = proposed_height
+            elif comment == 'Dress Drip Loop':
+                drip_loop_obj = next((item for item in self.attachment_list if item.name == 'drip_loop'), None)
+                for attachment in reversed(self.attachment_list):
+                    if attachment.name == 'secondary_spool' or attachment.name == 'secondary_riser':
+                        drip_loop_obj.height = at.feet_and_inches(attachment.get_height_in_inches() - 6)
+            elif comment == 'Ground Streetlight':
+                streetlight_obj = next((item for item in self.attachment_list if item.name == 'streetlight'), None)
+                if streetlight_obj is not None:
+                    streetlight_obj.grounded = True
+            elif comment == 'Mold Streetlight':
+                streetlight_obj = next((item for item in self.attachment_list if item.name == 'streetlight'), None)
+                if streetlight_obj is not None:
+                    streetlight_obj.molded = True
+
     def extract_attachments(self) -> List[at.Attachment]:
         """Combines attachments from columns and notes"""
-        lst1 = self.extract_column_attachments()
-        lst2 = self.extract_note_attachments()
+        lst1 = self._extract_column_attachments()
+        lst2 = self._extract_note_attachments()
         return lst1 + lst2
 
-    def extract_column_attachments(self) -> List[at.Attachment]:
+    def _extract_column_attachments(self) -> List[at.Attachment]:
         """Loops through each column and creates attachment list"""
         lst = []
         for column, value in self.row.items():
@@ -29,7 +53,7 @@ class Pole:
                 lst.append(at.create_attachment(column, value, self.row))
         return lst
 
-    def extract_note_attachments(self) -> List[at.Attachment]:
+    def _extract_note_attachments(self) -> List[at.Attachment]:
         """Loops through each attachment in notes and creates attachment list"""
         lst = []
         for attachment in self.row['additional_measurements']:

@@ -13,9 +13,42 @@ def select_jurisdiction(jurisdiction: str) -> 'ExcelManager':
 
 
 class ExcelManager(ABC):
-    """Extracts data from excel and formats it"""
+    """
+    Extracts data from excel and formats it
+
+    self.file_path: This should lead to an Excel spreadsheet that uses a template
+    self.template_path: This should lead to a template Excel spreadsheet
+    self.df: Stores the spreadsheet data in a DataFrame to be used
+    self.attachment_map: Dictionary that maps column headers to headers the PoleManager class can understand
+    self.reversed_map: Dictionary that maps standard headers that the PoleManager class understands back to template
+    headers
+    self.template_header: Stores template column headers in a list in the same order they are in the template ot be
+    used to format other DataFrames to fit in the template DataFrame
+    self.standard_headers: Stores template headers mapped to standard
+
+    Example of use:
+    # Read excel data and format for PoleManager
+    excel_manager = em.select_jurisdiction('PSE')
+    excel_manager.set_file_path('user_input/pse_ground_mold.xlsx')
+    excel_manager.read_excel()
+    excel_manager.format()
+    excel_manager.parse_column('additional_measurements')
+
+    # Extract poles and create make ready
+    poles = PoleManager()
+    poles.extract_poles(excel_manager.df)
+    poles.get_all_violations()
+
+    # Update make ready in spreadsheet and create output
+    excel_manager.update_make_ready(poles.pole_list)
+    excel_manager.parse_column('additional_measurements')
+    excel_manager.format()
+    excel_manager.create_output()
+    """
+
     def __init__(self):
         self.file_path = None
+        self.template_path = None
         self.df = None
         self.attachment_map: Dict[str] = None
         self.reversed_map: Dict[str] = None
@@ -104,6 +137,7 @@ class PSEManager(ExcelManager):
     """Extracts data from excel and formats it to PSE template"""
     def __init__(self):
         super().__init__()
+        self.template_path = 'templates/PSE.xlsx'
         self.attachment_map = {
             'Seq #': '_title',
             'PSE Pole #': 'pse_tag_number',
@@ -159,7 +193,7 @@ class PSEManager(ExcelManager):
         self._format_measurements()
 
     def format(self) -> None:
-        """Changes DataFrame into a standard DataFrame that is usable in other classes"""
+        """Changes DataFrame into a standard or template DataFrame that is usable in other classes"""
         formatted_df = pd.DataFrame()
         for column in self.df:
             formatted_df[self.rename_header(column)] = self.df[column]
@@ -174,7 +208,7 @@ class PSEManager(ExcelManager):
         source_sheet = source_wb.active
 
         # Load the destination workbook
-        destination_wb = openpyxl.load_workbook('templates/PSE.xlsx')
+        destination_wb = openpyxl.load_workbook(self.template_path)
         destination_sheet = destination_wb.active
 
         # Copy cells from source to destination
@@ -182,7 +216,7 @@ class PSEManager(ExcelManager):
             for cell in row:
                 destination_sheet.cell(row=cell.row + 8, column=cell.column, value=cell.value)
 
-        # Copy cells T1 and U1 from source to T9 and U9 in destination
+        # Copy cells T1 and U1 from source to T9 and U9 in destination (Grounded and Molded headers)
         destination_sheet['T9'] = source_sheet['T1'].value
         destination_sheet['U9'] = source_sheet['U1'].value
 

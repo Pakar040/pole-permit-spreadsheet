@@ -1,9 +1,23 @@
 import excel_manager as em
 import format_fulcrum as ff
 from pole_manager import PoleManager
+import logging
+import os
 
 
 def main():
+    # Remove log file if it is there
+    log_file = 'logging/log.log'
+    if os.path.exists(log_file):
+        os.remove(log_file)
+
+    # Log settings
+    logging.basicConfig(
+        filename=log_file,
+        level=logging.DEBUG,
+        format='%(levelname)s - %(message)s',
+    )
+
     # Read excel data and format for PoleManager
     excel_manager = em.select_jurisdiction('PSE')
     excel_manager.set_file_path('user_input/pole_data_make_ready.xlsx')

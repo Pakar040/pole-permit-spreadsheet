@@ -147,7 +147,7 @@ class PSEManager(ExcelManager):
             'Location': 'Location',
             'City/Area': 'City/Area',
             'Neutral': 'neutral_height',
-            'Secondary': 'secondary_spool',
+            'Secondary': 'secondary_spool.txt',
             'Drip Loop': 'drip_loop',
             'Secondary Riser': 'secondary_riser',
             'Street Light': 'streetlight',
@@ -188,7 +188,7 @@ class PSEManager(ExcelManager):
         self._format_measurements()
 
     def read_excel(self) -> None:
-        """Takes data from excel file to create a dataframe"""
+        """Takes data from excel file to create a DataFrame"""
         self.df = pd.read_excel(self.file_path, skiprows=8).astype(str)
         self._format_measurements()
 

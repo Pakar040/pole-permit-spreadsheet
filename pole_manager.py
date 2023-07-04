@@ -31,7 +31,7 @@ class PoleManager:
 
     def set_to_proposed(self):
         for index, pole in enumerate(self.pole_list):
-            pole.set_to_proposed_attachments()
+            pole.set_to_proposed_heights()
 
     def get_all_violations(self) -> None:
         """Adds all violations for all poles to dict"""

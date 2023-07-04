@@ -1,37 +1,9 @@
 import logging
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import List
 import attachment as at
 import pandas as pd
-import os
-
-
-# ----- Static Methods ----- #
-# def identify_comment_attachment(comment, sequence_number):
-#     comment = comment.lower()   # convert the comment to lowercase
-#
-#     # Get a list of all files in the directory
-#     files = os.listdir('identify_attachments/attachments')
-#
-#     # Filter to only .txt files
-#     txt_files = [f for f in files if f.endswith('.txt')]
-#
-#     for file in txt_files:
-#         with open('identify_attachments/attachments/' + file, 'r') as f:
-#             for line in f:
-#                 items = line.split()  # split line into items
-#
-#                 # Convert all items to lowercase
-#                 items = [item.lower() for item in items]
-#
-#                 # If item contains '!', it must not be in comment
-#                 # If item does not contain '!', it must be in comment
-#                 if all(item.replace('!', '') not in comment if '!' in item else item in comment for item in items):
-#                     return file[:-4]   # return the file name without '.txt'
-#
-#     # If no matching file found, return None
-#     logging.warning(f"Pole {sequence_number}: \"{comment}\" not recognized")
-#     return comment
+import constants
 
 
 @dataclass
@@ -44,11 +16,11 @@ class Pole:
         self.sequence_number = self.row['_title']
         self.attachment_list = self.extract_attachments()
 
-    def set_to_proposed_attachments(self):
+    def set_to_proposed_heights(self):
         """Call class like a method"""
-        Pole.SetToProposedAttachments(self.attachment_list, self.row, self.sequence_number)
+        Pole.SetToProposedHeights(self.attachment_list, self.row, self.sequence_number)
 
-    class SetToProposedAttachments:
+    class SetToProposedHeights:
         def __init__(self, attachment_list: List[at.Attachment], row: pd.DataFrame, sequence_number: str) -> None:
             """Loops through each comment in column and replaces attachment list heights to match proposed pole"""
 
@@ -64,72 +36,104 @@ class Pole:
                 if isinstance(comment, dict):
                     self.update_attachment_height(comment)
                 elif comment == 'Dress Drip Loop':
-                    self.dress_drip_loop()
+                    self.dress_drip_loop(comment)
                 elif comment == 'Ground Streetlight':
-                    self.ground_streetlight()
+                    self.ground_streetlight(comment)
                 elif comment == 'Mold Streetlight':
-                    self.mold_streetlight()
+                    self.mold_streetlight(comment)
                 else:
                     logging.warning(f"Pole {self.sequence_number}: \"{comment}\" comment was not recognized")
 
         def update_attachment_height(self, comment):
             """Handles comments that move an attachment to a new height"""
-            name = self.factory.identify_comment_attachment(comment['name'], self.sequence_number)
-            proposed_height = comment['value']
-            match_found = False
-            for attachment in self.attachment_list:
-                if attachment.name in name:
-                    attachment.height = proposed_height
-                    match_found = True
-            if not match_found:
+            # Get proposed name and height
+            proposed_attachment_name = self.factory.identify_comment_attachment(comment['name'], self.sequence_number)
+            proposed_attachment_height = comment['value']
+            is_attachment_existing = False
+            # Finds attachment
+            for existing_attachment in self.attachment_list:
+                if existing_attachment.name in proposed_attachment_name:
+                    # Sets attachment height to proposed height
+                    existing_attachment.height = proposed_attachment_height
+                    is_attachment_existing = True
+            # If attachment cant be found log a warning
+            if not is_attachment_existing:
                 logging.warning(f"Pole {self.sequence_number}: \"{comment['name']}\" attachment not on pole")
 
-        def dress_drip_loop(self):
+        def dress_drip_loop(self, comment):
             """Updates drip loop height"""
+            # Sorts attachments from highest to lowest
             self.attachment_list.sort(reverse=True)
+            # Set reference variable to drip loop
             drip_loop_obj = next((item for item in self.attachment_list if item.name == 'drip_loop'), None)
-            for attachment in reversed(self.attachment_list):
-                if attachment.name == 'secondary_spool.txt' or attachment.name == 'secondary_riser':
-                    drip_loop_obj.height = at.feet_and_inches(attachment.get_height_in_inches() - 6)
+            if drip_loop_obj is not None:
+                # Finds which ever is lower 'spool' or 'riser;
+                for attachment in reversed(self.attachment_list):
+                    if attachment.name == 'secondary_spool' or attachment.name == 'secondary_riser':
+                        # Set drip loop INCHES_OF_DRIP below power
+                        inches_of_drip = constants.INCHES_OF_DRIP
+                        drip_loop_obj.height = at.feet_and_inches(attachment.get_height_in_inches() - inches_of_drip)
+            else:
+                logging.warning(f"{self.sequence_number}: \"{comment}\" no drip loop found")
 
-        def ground_streetlight(self):
+        def ground_streetlight(self, comment):
             """Updates streetlight to be grounded"""
             streetlight_obj = next((item for item in self.attachment_list if item.name == 'streetlight'), None)
             if streetlight_obj is not None:
                 streetlight_obj.grounded = True
+            else:
+                logging.warning(f"{self.sequence_number}: \"{comment}\" no streetlight found")
 
-        def mold_streetlight(self):
+        def mold_streetlight(self, comment):
             """Updates streetlight to be grounded molded"""
             streetlight_obj = next((item for item in self.attachment_list if item.name == 'streetlight'), None)
             if streetlight_obj is not None:
                 streetlight_obj.molded = True
+            else:
+                logging.warning(f"{self.sequence_number}: \"{comment}\" no streetlight found")
 
     def extract_attachments(self) -> List[at.Attachment]:
         """Combines attachments from columns and notes"""
-        lst1 = self._extract_column_attachments()
-        lst2 = self._extract_note_attachments()
-        return lst1 + lst2
+        return Pole.ExtractAttachments(self.row).extract_attachments()
 
-    def _extract_column_attachments(self) -> List[at.Attachment]:
-        """Loops through each column and creates attachment list"""
-        lst = []
-        for column, value in self.row.items():
-            attachment_obj = self.factory.create_attachment(column, value, self.row)
-            if attachment_obj is not None and pd.notna(value):
-                lst.append(attachment_obj)
-        return lst
+    class ExtractAttachments:
 
-    def _extract_note_attachments(self) -> List[at.Attachment]:
-        """Loops through each attachment in notes and creates attachment list"""
-        lst = []
-        for attachment in self.row['additional_measurements']:
-            if isinstance(attachment, dict):
-                name = attachment['name'].lower()
-                height = attachment['value'].lower()
+        def __init__(self, row: pd.DataFrame):
+            self.factory = at.AttachmentFactory()
+            self.row = row
+
+        def extract_attachments(self):
+            """Combine column and not attachments"""
+            lst1 = self.extract_column_attachments()
+            lst2 = self.extract_note_attachments()
+            return lst1 + lst2
+
+        def extract_column_attachments(self) -> List[at.Attachment]:
+            """Extract attachments out of columns"""
+            lst = []
+            for column, value in self.row.items():
+                name = column
+                height = value
                 attachment_obj = self.factory.create_attachment(name, height, self.row)
-                if attachment_obj is not None:
+                if self.is_valid_attachment(attachment_obj):
                     lst.append(attachment_obj)
-        return lst
+            return lst
+
+        def extract_note_attachments(self) -> List[at.Attachment]:
+            """Loops through each attachment in notes and creates attachment list"""
+            lst = []
+            for attachment in self.row['additional_measurements']:
+                if isinstance(attachment, dict):
+                    name = attachment['name'].lower()
+                    height = attachment['value']
+                    attachment_obj = self.factory.create_attachment(name, height, self.row)
+                    if self.is_valid_attachment(attachment_obj):
+                        lst.append(attachment_obj)
+            return lst
+
+        @staticmethod
+        def is_valid_attachment(attachment_obj):
+            return attachment_obj is not None and pd.notna(attachment_obj.height)
 
     def find_violations(self) -> str:
         """Finds all the violations"""
@@ -149,4 +153,4 @@ class Pole:
         for attachment in self.attachment_list:
             if attachment.name == attachment_name:
                 return attachment
-        return "No attachment with this name was found"
+        raise ValueError("No attachment with this name was found")

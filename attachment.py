@@ -1,3 +1,4 @@
+import constants
 import logging
 import os
 from dataclasses import dataclass
@@ -7,59 +8,6 @@ import pandas as pd
 
 
 # ----- Static Methods ----- #
-# def get_identifiers(identifier_file: str) -> List[List]:
-#     """Returns a list to identify attachment type"""
-#     file_path = os.path.join('identify_attachments', identifier_file)
-#     file_lines = open(file_path, 'r').readlines()
-#     return [line.strip().lower().split(' ') for line in file_lines]
-
-
-# def check_string(list_of_lists: List[List[str]], string: str) -> bool:
-#     """Allows for 'primary riser' to match with 'primary_riser'"""
-#     for lst in list_of_lists:
-#         if all(item in string for item in lst):
-#             return True
-#     return False
-
-
-# def create_attachment(name: str, height: str, df_row: pd.DataFrame) -> 'Attachment':
-#     """Creates an attachment object of any type"""
-#     comm = get_identifiers('comm.txt')
-#     power = get_identifiers('power.txt')
-#     streetlight = get_identifiers('streetlight.txt')
-#
-#     if check_string(streetlight, name):
-#
-#         grounded = pd.notna(df_row['grounded']) and df_row['grounded'].lower() == 'yes'  # True or False
-#         molded = pd.notna(df_row['molded']) and df_row['molded'].lower() == 'yes'  # True or False
-#
-#         return Streetlight(
-#             name=name,
-#             height=height,
-#             grounded=grounded,
-#             molded=molded
-#         )
-#     elif check_string(power, name):
-#         return Power(
-#             name=name,
-#             height=height
-#         )
-#     elif check_string(comm, name):
-#         return Comm(
-#             name=name,
-#             height=height
-#         )
-
-
-# def is_the_same(attachment1, attachment2):
-#     """'CATV' and 'CATV 2nd Attach' will return true"""
-#     # Check if the text starts with the keyword or the keyword starts with the text
-#     if attachment2.startswith(attachment1) or attachment1.startswith(attachment2):
-#         return True
-#     else:
-#         return False
-
-
 def feet_and_inches(inches: int) -> str:
     feet = inches // 12
     remaining_inches = inches % 12
@@ -99,6 +47,7 @@ class AttachmentFactory:
         return self.is_attachment_type(self.comm_identifiers, attachment_name)
 
     def create_attachment(self, name: str, height: str, dataframe_row) -> 'Attachment':
+        """Creates an attachment of its type"""
         if self.is_streetlight(name):
             return self.create_streetlight_attachment(name, height, dataframe_row)
         elif self.is_power(name):
@@ -206,21 +155,36 @@ class Attachment(ABC):
 class Power(Attachment):
 
     def check_for_violation(self, other: 'Attachment') -> str:
+        # Height of both attachments in inches
         self_inches = self.get_height_in_inches()
         other_inches = other.get_height_in_inches()
-        if abs(self_inches - other_inches) < 40 and isinstance(other, Comm):
+        # Set distance comm attachments should be from power attachments
+        required_distance = constants.INCHES_POWER_TO_COMM
+        # Set conditions for violation
+        is_in_range = abs(self_inches - other_inches) < required_distance
+        is_comm = isinstance(other, Comm)
+        # Return violation string or none
+        if is_in_range and is_comm:
             return f"VIOLATION-{other.name} is {abs(self_inches - other_inches)}\" from {self.name}"
 
 
 class Comm(Attachment):
 
     def check_for_violation(self, other: 'Attachment') -> str:
+        # Height of both attachments in inches
         self_inches = self.get_height_in_inches()
         other_inches = other.get_height_in_inches()
-        if abs(self_inches - other_inches) < 12 and isinstance(other, Comm) and not self.is_the_same(other):
+        # Set distance comm attachments should be apart
+        required_distance = constants.INCHES_COMM_TO_COMM
+        # Set conditions for violation
+        is_in_range = abs(self_inches - other_inches) < required_distance
+        is_also_comm = isinstance(other, Comm)
+        is_the_same = self._is_the_same(other)
+        # Return violation string or none
+        if is_in_range and is_also_comm and not is_the_same:
             return f"VIOLATION-{other.name} is {abs(self_inches - other_inches)}\" from {self.name}"
 
-    def is_the_same(self, other: 'Attachment'):
+    def _is_the_same(self, other: 'Attachment'):
         """'CATV' and 'CATV 2nd Attach' will return true"""
         # Check if the text starts with the keyword or the keyword starts with the text
         if other.name.startswith(self.name) or self.name.startswith(other.name):
@@ -243,14 +207,22 @@ class Streetlight(Attachment):
         return f"Streetlight(name={self.name}, height={self.height}, grounded={self.grounded}, molded={self.molded})"
 
     def check_for_violation(self, other: 'Attachment') -> str:
+        # Height of both attachments in inches
         self_inches = self.get_height_in_inches()
         other_inches = other.get_height_in_inches()
+        # Set distance comm attachments should be apart
+        required_distance = self._set_violation_range()
+        is_in_range = abs(self_inches - other_inches) < required_distance
+        is_comm = isinstance(other, Comm)
+        # Return violation string or none
+        if is_in_range and is_comm:
+            return f"VIOLATION-{other.name} is {abs(self_inches - other_inches)}\" from {self.name}"
+
+    def _set_violation_range(self):
+        """Sets distance comm should be from streetlight"""
         if self.grounded and self.molded:
-            if abs(self_inches - other_inches) < 4 and isinstance(other, Comm):
-                return f"VIOLATION-{other.name} is {abs(self_inches - other_inches)}\" from {self.name}"
+            return constants.INCHES_STREETLIGHT_GROUNDED_AND_MOLDED_TO_COMM
         elif self.grounded:
-            if abs(self_inches - other_inches) < 12 and isinstance(other, Comm):
-                return f"VIOLATION-{other.name} is {abs(self_inches - other_inches)}\" from {self.name}"
+            return constants.INCHES_STREETLIGHT_GROUNDED_TO_COMM
         else:
-            if abs(self_inches - other_inches) < 40 and isinstance(other, Comm):
-                return f"VIOLATION-{other.name} is {abs(self_inches - other_inches)}\" from {self.name}"
+            return constants.INCHES_STREETLIGHT_TO_COMM

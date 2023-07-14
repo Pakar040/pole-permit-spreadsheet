@@ -1,9 +1,9 @@
 import logging
 from dataclasses import dataclass
 from typing import List
-import attachment as at
+import model.constants as constants
+import model.attachment as at
 import pandas as pd
-import constants
 
 
 @dataclass
@@ -15,6 +15,9 @@ class Pole:
         self.make_ready = None
         self.sequence_number = self.row['_title']
         self.attachment_list = self.extract_attachments()
+
+    def __repr__(self):
+        return f"Sequence Number: {self.sequence_number}\nMake Ready Violations: {self.make_ready}"
 
     def set_to_proposed_heights(self):
         """Call class like a method"""

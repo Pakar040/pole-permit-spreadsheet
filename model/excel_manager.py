@@ -1,14 +1,14 @@
 from typing import List, Dict
 import pandas as pd
-from pole import Pole
+from model.pole import Pole
 import openpyxl
 from abc import ABC, abstractmethod
 
 
 # ----- Static Methods ----- #
-def select_jurisdiction(jurisdiction: str) -> 'ExcelManager':
+def select_template(template: str) -> 'ExcelManager':
     """Creates a manager instance of chosen jurisdiction"""
-    if jurisdiction == 'PSE':
+    if template == 'PSE':
         return PSEManager()
 
 
@@ -125,11 +125,15 @@ class ExcelManager(ABC):
         pass
 
     @abstractmethod
+    def read_excel_in_read_mode(self) -> None:
+        pass
+
+    @abstractmethod
     def format(self) -> None:
         pass
 
     @abstractmethod
-    def create_output(self) -> None:
+    def create_output(self, file_path: str) -> None:
         pass
 
 
@@ -137,7 +141,7 @@ class PSEManager(ExcelManager):
     """Extracts data from excel and formats it to PSE template"""
     def __init__(self):
         super().__init__()
-        self.template_path = 'templates/PSE.xlsx'
+        self.template_path = 'model/templates/PSE.xlsx'
         self.attachment_map = {
             'Seq #': '_title',
             'PSE Pole #': 'pse_tag_number',
@@ -192,6 +196,33 @@ class PSEManager(ExcelManager):
         self.df = pd.read_excel(self.file_path, skiprows=8).astype(str)
         self._format_measurements()
 
+    def read_excel_in_read_mode(self) -> None:
+        """Reads excel file in read mode to allow data extraction while excel file is open"""
+        # Load workbook
+        wb = openpyxl.load_workbook(filename=self.file_path, read_only=True)
+        # Select active worksheet
+        ws = wb.active
+        # Get data from worksheet
+        data = ws.values
+        # Skip the first 8 rows
+        for _ in range(8):
+            next(data)
+        # Get column names from the next line of data
+        cols = next(data)
+        # Remove the last 5 None values from cols
+        cols = [col for col in cols if col is not None]
+        # Get the rest of the data
+        data_rows = list(data)
+        # Only take the first n columns for each row, where n is the number of columns in cols
+        data_rows = [row[:len(cols)] for row in data_rows]
+        # Remove rows that are entirely empty
+        data_rows = [row for row in data_rows if any(cell is not None for cell in row)]
+        # Create DataFrame
+        df = pd.DataFrame(data_rows, columns=cols)
+        # Convert all data types to strings
+        self.df = df.astype(str)
+        self._format_measurements()
+
     def format(self) -> None:
         """Changes DataFrame into a standard or template DataFrame that is usable in other classes"""
         formatted_df = pd.DataFrame()
@@ -199,12 +230,12 @@ class PSEManager(ExcelManager):
             formatted_df[self.rename_header(column)] = self.df[column]
         self.df = formatted_df
 
-    def create_output(self) -> None:
+    def create_output(self, file_path: str) -> None:
         """Combines template DataFrame with make manipulated DataFrame"""
-        self.df.to_excel('temp/temp.xlsx', sheet_name='Sheet1', index=False)
+        self.df.to_excel('model/temp/temp.xlsx', sheet_name='Sheet1', index=False)
 
         # Load the source workbook
-        source_wb = openpyxl.load_workbook('temp/temp.xlsx')
+        source_wb = openpyxl.load_workbook('model/temp/temp.xlsx')
         source_sheet = source_wb.active
 
         # Load the destination workbook
@@ -221,7 +252,7 @@ class PSEManager(ExcelManager):
         destination_sheet['U9'] = source_sheet['U1'].value
 
         # Save the destination workbook
-        destination_wb.save('output/output.xlsx')
+        destination_wb.save(file_path)
 
     def _format_measurements(self):
         """Formats attachment heights to not include decimal"""

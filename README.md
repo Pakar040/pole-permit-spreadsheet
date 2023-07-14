@@ -1,10 +1,10 @@
 # pole-permit-spreadsheet
- Tool used for filling out appedix on pole permit jobs
+ Tool used for filling out appendix on pole permit jobs
 
 **Example (CableComApp xlsx to PSE template):**
 
     `# Create spreadsheet from downloaded data
-    excel_manager = em.select_jurisdiction('PSE')
+    excel_manager = em.select_template('PSE')
     fulcrum_excel = ff.CableComAppManager('user_input/cablecom_poles.xlsx')
     fulcrum_excel.set_excel_manager(excel_manager)
     fulcrum_excel.read_excel()
@@ -20,12 +20,12 @@
 
     # Once formatted for template
     excel_manager.read_data_frame(fulcrum_excel.df)
-    excel_manager.create_output()`
+    excel_manager.create_output(file_path)`
 
 **Example (PSE template alone):**
 
     # Read excel data and format for PoleManager
-    excel_manager = em.select_jurisdiction('PSE')
+    excel_manager = em.select_template('PSE')
     excel_manager.set_file_path('user_input/pse_ground_mold.xlsx')
     excel_manager.read_excel()
     excel_manager.format()
@@ -40,7 +40,7 @@
     excel_manager.update_make_ready(poles.pole_list)
     excel_manager.parse_column('additional_measurements')
     excel_manager.format()
-    excel_manager.create_output()
+    excel_manager.create_output(file_path)
 
 **Example for using proposed values for make ready:**
     

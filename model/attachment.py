@@ -1,4 +1,4 @@
-import constants
+import model.constants as constants
 import logging
 import os
 from dataclasses import dataclass
@@ -17,7 +17,7 @@ def feet_and_inches(inches: int) -> str:
 class AttachmentFactory:
 
     def __init__(self):
-        self.identifier_directory = 'identify_attachments'
+        self.identifier_directory = 'model/identify_attachments'
         self.attachment_identifier_directory = os.path.join(self.identifier_directory, 'attachments')
         self.comm_identifiers = self.get_identifiers('comm.txt')
         self.power_identifiers = self.get_identifiers('power.txt')

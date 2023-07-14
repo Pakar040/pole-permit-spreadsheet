@@ -1,8 +1,8 @@
 from typing import List
 import numpy as np
 import pandas as pd
-from excel_manager import ExcelManager
-from pole import Pole
+from model.excel_manager import ExcelManager
+from model.pole import Pole
 
 
 # ----- Static Methods ----- #

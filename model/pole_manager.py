@@ -1,4 +1,4 @@
-from pole import Pole
+from model.pole import Pole
 from typing import List
 
 
@@ -25,6 +25,9 @@ class PoleManager:
 
     def extract_poles(self, dataframe) -> None:
         """Gets all the poles from the dataframe and stores it in a list"""
+        # Make sure pole list is empty
+        self.pole_list = []
+        # Add poles
         for index, row in dataframe.iterrows():
             pole = Pole(row)
             self.pole_list.append(pole)
